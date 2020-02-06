@@ -1,0 +1,51 @@
+version: '2.1'
+
+services:
+  php:
+    container_name: travelyo_php
+    build:
+      context: php
+      args:
+        TIMEZONE: Europe/Kiev
+    depends_on:
+      - mysql
+    ports:
+      - 9000:9000
+    volumes:
+      - ../:/app
+      - ~/.ssh/id_rsa:/root/.ssh/id_rsa
+    working_dir: /app
+    environment:
+      PHP_IDE_CONFIG: serverName=travelyo
+      XDEBUG_CONFIG: idekey=PHPSTORM remote_host=172.17.0.1 remote_port=9001 remote_connect_back=0
+    user: ${LOCAL_USER}
+
+  mysql:
+    container_name: travelyo_mysql
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    volumes:
+      - ./.data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: travelyo
+      MYSQL_USER: travelyo
+      MYSQL_PASSWORD: travelyo
+
+  nginx:
+    container_name: travelyo_nginx
+    build:
+      context: nginx
+    working_dir: /app
+    ports:
+      - 80:80
+    volumes_from:
+      - php
+    depends_on:
+      - php
+    volumes:
+      - ./.data/nginx/logs:/var/log/nginx
+    environment:
+      VIRTUAL_HOST: travelyo.loc
+      VIRTUAL_PORT: 80
